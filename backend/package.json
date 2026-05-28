@@ -1,0 +1,17 @@
+{
+  "name": "backend-drogueria",
+  "version": "1.0.0",
+  "description": "API segura con TOTP para Droguería Tenderos Balmoral",
+  "main": "backend.js",
+  "scripts": {
+    "start": "node backend.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "mariadb": "^3.3.0",
+    "speakeasy": "^2.0.0",
+    "qrcode": "^1.5.3",
+    "cors": "^2.8.5"
+  }
+}
+

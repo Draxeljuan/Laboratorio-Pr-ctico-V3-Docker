@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # Servidor de Base de Datos (MariaDB)
+  db:
+    image: mariadb:10.11
+    container_name: drogueria_db
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${DB_NAME}
+    ports:
+      - "3306:3306"
+    volumes:
+      # Mapeo para persistir los datos en tu disco duro local
+      - db_data:/var/lib/mysql
+      # Script inicial para crear las tablas automáticamente al encender por primera vez
+      - ./database/esquema.sql:/docker-entrypoint-initdb.d/esquema.sql
+      
+    networks:
+      - red-drogueria
+
+  # Servidor de la API (Node.js)
+  backend:
+    build: ./backend
+    container_name: mfa_backend
+    restart: always
+    ports:
+      - ${BACKEND_PORT}:3000
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_ROOT_PASSWORD}
+      - DB_NAME=${DB_NAME}
+    volumes:
+      - ./frontend:/usr/src/drogueria/frontend
+    depends_on:
+      - db
+    networks:
+      - red-drogueria
+
+volumes:
+  db_data: # Definición del volumen persistente exigido en la rúbrica
+  
+
+networks:
+  red-drogueria:
+    driver: bridge
