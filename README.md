@@ -93,3 +93,7 @@ Como referencia cuando quiera iniciar el contenedor de ceros sin el autenticar c
 ```bash
 docker compose down && docker compose up --build
 ```
+y para reiniciar volumenes también
+```bash
+docker compose down -v && docker compose up --build
+```
