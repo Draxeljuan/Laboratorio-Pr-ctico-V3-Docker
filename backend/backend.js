@@ -98,11 +98,9 @@ const mfaProtectionMiddleware = async (req, res, next) => {
     const mfaToken = req.headers["x-mfa-token"];
 
     if (!mfaToken) {
-      return res
-        .status(401)
-        .json({
-          error: "Acceso denegado. Se requiere el encabezado x-mfa-token",
-        });
+      return res.status(401).json({
+        error: "Acceso denegado. Se requiere el encabezado x-mfa-token",
+      });
     }
 
     let connection;
@@ -149,30 +147,46 @@ app.use(mfaProtectionMiddleware);
 // ==========================================
 // 🔑 ENDPOINTS DE SEGURIDAD (TOTP/MFA)
 // ==========================================
+// Ejemplo de la ruta en tu backend/backend.js
 app.get("/api/2fa/setup", async (req, res) => {
   try {
+    // 1. Generar el secreto con speakeasy u otplib
     const secret = speakeasy.generateSecret({
-      name: "Tenderos Balmoral (Admin)",
+      name: "Drogueria Balmoral:admin_balmoral",
     });
-    QRCode.toDataURL(secret.otpauth_url, (err, data_url) => {
-      if (err) return res.status(500).json({ error: "Error en QR" });
-      res.json({ secret: secret.base32, qrCode: data_url });
+
+    // 2. Convertir la URL string 'otpauth://...' en una imagen Base64 real usando la librería qrcode
+    const QRCode = require("qrcode");
+    QRCode.toDataURL(secret.otpauth_url, (err, dataUrl) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ error: "Error generando el código de barras QR" });
+      }
+
+      // 3. Responder al frontend con el secreto base32 Y la imagen mapeada de forma idéntica
+      res.json({
+        secret: secret.base32,
+        qrCodeUrl: dataUrl, // <-- Este 'dataUrl' es el string largo que el <img> necesita
+      });
     });
   } catch (error) {
-    res.status(500).json({ error: "Error 2fa setup" });
+    res.status(500).json({ error: "Fallo estructural en el servidor" });
   }
 });
 
 app.post("/api/2fa/verify", async (req, res) => {
-  const { token, secretBase32 } = req.body;
+  const { token, secret: secretBase32 } = req.body;
   let connection;
+
   try {
     const verified = speakeasy.totp.verify({
-      secret: secretBase32,
+      secret: secretBase32, // Ahora sí tiene el string Base32 correcto
       encoding: "base32",
       token: token,
       window: 1,
     });
+
     if (verified) {
       connection = await pool.getConnection();
       await connection.query(
@@ -181,10 +195,10 @@ app.post("/api/2fa/verify", async (req, res) => {
       );
       return res.json({ success: true });
     } else {
-      return res.status(400).json({ message: "Token inválido" });
+      return res.status(400).json({ error: "Token inválido" });
     }
   } catch (error) {
-    return res.status(500).json({ error: "Error" });
+    return res.status(500).json({ error: "Error en el servidor" });
   } finally {
     if (connection) connection.release();
   }

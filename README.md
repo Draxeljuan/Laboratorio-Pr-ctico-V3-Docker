@@ -72,15 +72,24 @@ Por defecto, WSL2 corre en una red virtual privada (NAT), impidiendo que otros o
    ip addr show eth0 | grep 'inet ' | awk '{print $2}' | cut -d'/' -f1
    ```
 2. En Windows, abre PowerShell como administrador y ejecuta:
+
    ```powershell
    netsh interface portproxy add v4tov4 listenport=3000 listenaddress=0.0.0.0 connectport=3000 connectaddress=<IP_WSL2>
    ```
 
    3. Habilita el reenvío de puertos en el firewall de Windows para el puerto `3000`.
+
    ```powershell
    New-NetFirewallRule -DisplayName "Permitir Puerto 3000" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 3000
    ```
+
    Los demas ahora se conectan si estan en la misma red con algo asi:
    http://192.168.1.15:3000
 
 ---
+
+Como referencia cuando quiera iniciar el contenedor de ceros sin el autenticar configurado:
+
+```bash
+docker compose down && docker compose up --build
+```
